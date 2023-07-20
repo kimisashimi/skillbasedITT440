@@ -1,39 +1,57 @@
-import socket
-import threading
-import random
 
-# List of quotes
-quotes = [
+import socket
+import random
+import threading
+
+QUOTES = [
     "Yesterday is history, Tomorrow is a mystery, but Today is a gift. - Master Oogway",
     "Ilmu itu bukan yang dihafal, tetapi yang memberi manfaat. - Imam Syafie",
     "Orang yang paling aku sukai adalah dia yang menunjukkan kesalahanku. - Umar bin Khattab",
     "Sabar atas sesuatu yang tidak kau ingin, sabar menahan diri dari sesuatu yang kau ingini. - Ali Bin Abi Talib",
     "Berbuat baiklah, agar engkau dikenang sebagai orang baik. - Hamka",
+
 ]
 
-def handle_client(client_socket):
-    # Retrieve a random quote from the list
-    quote = random.choice(quotes)
-    # Send the quote to the client
-    client_socket.send(quote.encode('utf-8'))
-    # Close the client socket
-    client_socket.close()
+def get_random_quote():
+    return random.choice(QUOTES)
+
+def handle_client(connection, address):
+    print(f"Connected to {address}")
+
+    try:
+        while True:
+            request = connection.recv(1024).decode()
+            if request.lower() == "quote":
+                quote = get_random_quote()
+                connection.send(quote.encode())
+            else:
+                break
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    finally:
+        connection.close()
+        print(f"Connection with {address} closed")
 
 def main():
-    SERVER_IP = "192.168.21.135"
-    SERVER_PORT = 8888
-
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = (SERVER_IP, SERVER_PORT)
-    server_socket.bind(server_address)
+    server_host = '192.168.21.135'
+    server_port = 8888
+
+    server_socket.bind((server_host, server_port))
     server_socket.listen(5)
+    print("QOTD Server is listening for connections...")
 
-    print("Server listening on {}:{}".format(SERVER_IP, SERVER_PORT))
+    try:
+        while True:
+            connection, address = server_socket.accept()
+            client_thread = threading.Thread(target=handle_client, args=(connection, address))
+            client_thread.start()
 
-    while True:
-        client_socket, client_address = server_socket.accept()
-        client_thread = threading.Thread(target=handle_client, args=(client_socket,))
-        client_thread.start()
+    except KeyboardInterrupt:
+        print("\nQOTD Server is shutting down...")
+        server_socket.close()
 
 if __name__ == "__main__":
     main()
