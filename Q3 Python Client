@@ -1,0 +1,27 @@
+import socket
+
+def get_user_input():
+    while True:
+        try:
+            pressure_in_bar = float(input("Enter pressure in bar: "))
+            return pressure_in_bar
+        except ValueError:
+            print("Invalid input. Please enter a valid pressure value.")
+
+def start_client():
+    host = '192.168.21.135'
+    port = 7878
+
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
+
+    pressure_in_bar = get_user_input()
+    client_socket.send(str(pressure_in_bar).encode('utf-8'))
+
+    atmosphere_standard = client_socket.recv(1024).decode('utf-8')
+    print("Received atmosphere-standard value from server: {:.2f}".format(float(atmosphere_standard)))
+
+    client_socket.close()
+
+if __name__ == "__main__":
+    start_client()
