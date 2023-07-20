@@ -1,27 +1,30 @@
 import socket
 
 def main():
-    SERVER_IP = "192.168.21.135"
-    SERVER_PORT = 8888
-
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_host = '192.168.21.135'
+    server_port = 8888
 
     try:
-        # Connect to the server
-        server_address = (SERVER_IP, SERVER_PORT)
-        client_socket.connect(server_address)
+        client_socket.connect((server_host, server_port))
+        print("Connected to the QOTD server.")
 
-        # Request a quote from the server
-        quote = client_socket.recv(1024).decode('utf-8')
+        while True:
+            reply = input("Press 'Enter' to get a quote or type 'exit' to quit: ")
+            if reply.lower() == 'exit':
+                break
 
-        # Display the received quote
-        print("Received quote from server: {}".format(quote))
+            client_socket.send(b"quote")
+            quote = client_socket.recv(2048).decode()
+            print(f"Quote of the Day: {quote}")
 
-    except Exception as e:
-        print("An error occurred:", str(e))
-
+    except ConnectionRefusedError:
+        print("Connection to the QOTD server failed. Please ensure the server is running.")
+    except KeyboardInterrupt:
+        print("\nClient is closing...")
     finally:
         client_socket.close()
 
 if __name__ == "__main__":
     main()
+
